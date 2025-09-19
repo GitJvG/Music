@@ -11,4 +11,3 @@ def main():
     full_band['label_id'] = pd.to_numeric(full_band['label_id'], errors='coerce')
     full_band['label_id'] = full_band['label_id'].astype('Int64')
     full_band.to_csv(env.fband.path, index=False)
-main()

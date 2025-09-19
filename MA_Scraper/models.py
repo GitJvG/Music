@@ -123,7 +123,7 @@ class Member(Base):
 
 class Band_logo(Base):
     __tablename__ = 'band_logo'
-    band_id = Column(BigInteger, ForeignKey('band.band_id'), primary_key=True)
+    band_id = Column(BigInteger, ForeignKey('band.band_id', deferrable=True, initially='DEFERRED'), primary_key=True)
     data = Column(LargeBinary, nullable=False)
     retrieved_at = Column(DateTime(timezone=True), default=func.now())
     content_type = Column(Text, nullable=False)

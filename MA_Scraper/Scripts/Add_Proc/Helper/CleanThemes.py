@@ -1,46 +1,54 @@
 import unicodedata
-from nltk.stem import WordNetLemmatizer, PorterStemmer, LancasterStemmer
-import re
-import pandas as pd
+from nltk.stem import WordNetLemmatizer, PorterStemmer
 
 from MA_Scraper.Env import Env
 env = Env.get_instance()
 lemmatizer = WordNetLemmatizer()
 stemmer = PorterStemmer()
 
-def normalize_to_ascii(theme):
-    normalized = unicodedata.normalize('NFD', theme)
-    ascii_text = ''.join(char for char in normalized if unicodedata.category(char) != 'Mn')
+def basic_processing(df_series):
+    processed_series = df_series.astype(str)
+    
+    processed_series = (
+        processed_series.str.lower()
+        .str.replace(r'\(.*?\)', '', regex=True)
+        .str.replace(r'\s?/\s', '/', regex=True)
+    )
+    
+    processed_series = (
+        processed_series.str.replace(r'[^\x20-\x7E]', '', regex=True) 
+        .str.replace(r'\b(of|the|a|an|to)\b', '', regex=True)
+        .str.replace(r';', ',', regex=True)
+        .str.replace(r'/', ',', regex=True)
+        .str.replace(r'\band\b', ',', regex=True)
+        .str.replace(r'[()]+', '', regex=True)
+        .str.replace(r'\s*,\s*', ',', regex=True)
+        .str.replace(r'\s+', ' ', regex=True)
+        .str.strip()
+    )
+
+    def process_individual_themes(theme_string):
+        if not isinstance(theme_string, str) or not theme_string:
+            return None
         
-    return ascii_text
+        normalized = unicodedata.normalize('NFD', theme_string)
+        ascii_text = ''.join(char for char in normalized if unicodedata.category(char) != 'Mn')
+        
+        themes = []
+        for theme in ascii_text.split(','):
+            theme = theme.strip()
+            if not theme:
+                continue
 
-def basic_processing(theme):
-    theme = theme.lower()
-    theme = re.sub(r'\(.*?\)', '', theme) # removes anything between parenthesis
-    theme = re.sub(r'\s?/\s', '/', theme) # Removes spaces before and after '/'
+            longest_word = max(theme.split(), key=len, default='')
+            if not longest_word:
+                continue
+            
+            lemmatized_word = lemmatizer.lemmatize(longest_word)
+            stemmed_word = stemmer.stem(lemmatized_word)
+            themes.append(stemmed_word)
+        
+        return ','.join(themes) if themes else None
 
-    theme = normalize_to_ascii(theme)
-    theme = re.sub(r'[^\x20-\x7E]', '', theme) # Removes non-ASCII
-    theme = re.sub(r'\b(of|the|a|an|to)\b', '', theme) # remove common words
-    #theme = re.sub(r'-', ' ', theme)
-    theme = re.sub(r'\s+', ' ', theme) # Reduce consecutive spaces to one space
-
-    theme = re.sub(r';', ',', theme) # Replace semicolon with a comma. Metallum uses this for time related distinctions but that isn't an important distinction for me.
-    theme = re.sub(r'/', ',', theme) # Don't care for hybrid theme or very specific details. Can break context but still worth it given the messy format.
-    theme = re.sub(r'[()]+', '', theme).strip() # Removes remaining parenthesis
-    theme = re.sub(r'\band\b', ',', theme) # Replace 'and' with a comma
-    theme = re.sub(r'\s*,\s*', ',', theme)
-    themes = []
-    for theme in theme.split(','):
-        if not theme:
-            continue
-        longest_word = max(theme.split(), key=len)
-        if not longest_word:
-            continue
-
-        lemmatized_word = lemmatizer.lemmatize(longest_word)
-        stemmed_word = stemmer.stem(lemmatized_word)
-        themes.append(stemmed_word)
-
-    theme = ','.join(themes) if themes else None
-    return theme.strip() if theme else None
+    processed_series = processed_series.apply(process_individual_themes)
+    return processed_series.str.strip().replace('', None)

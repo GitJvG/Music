@@ -134,8 +134,8 @@ def update_theme_dict(new_themes, existing_dict, threshold=85):
     return existing_dict
 
 def main():
-    df = pd.read_csv(env.deta.path, dtype=env.deta.mapping)['themes']
-    df = df.dropna().apply(basic_processing)
+    df = pd.read_csv(env.deta.path, dtype=env.deta.mapping, engine='pyarrow')['themes']
+    df = basic_processing(df.dropna())
 
     themes, theme_count = items_to_set(df)
     clusters = group_themes(themes, theme_count, 93)
@@ -146,8 +146,9 @@ def main():
         pickle.dump(clusters, pickle_file)
 
 def update_pickle():
-    df = pd.read_csv(env.deta.path, dtype=env.deta.mapping)['themes']
-    df = df.dropna().apply(basic_processing)
+    df = pd.read_csv(env.deta.path, dtype=env.deta.mapping, engine='pyarrow')['themes']
+    df = basic_processing(df.dropna())
+
     output_path = env.dim_theme_dict
     
     theme_set, theme_count = items_to_set(df)

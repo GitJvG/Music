@@ -32,55 +32,6 @@ class YTM:
     
     def add_to_playlist(playlist_id, video_id):
         ytm.add_playlist_items(playlist_id, video_id)
-                                           
-class YTAPI:
-    def __init__(self):
-        self.youtube = youtube_client.get_client()
-        
-    def get_playlist_videos(self, playlist_url):
-        playlist_id = playlist_url.split('list=')[-1]
-        video_details = []
-        next_page_token = None
-
-        while True:
-            playlist_items_request = self.youtube.playlistItems().list(
-                part='snippet',
-                playlistId=playlist_id,
-                maxResults=200,
-                pageToken=next_page_token
-            )
-            playlist_items_response = playlist_items_request.execute()
-
-            for item in playlist_items_response['items']:
-                video_title = item['snippet']['title']
-
-                video_details.append(video_title)
-
-            next_page_token = playlist_items_response.get('nextPageToken')
-            if not next_page_token:
-                break
-
-        return video_details
-    
-    def get_video(self, search_query):
-        try:
-            search_response = self.youtube.search().list(
-                part="snippet",
-                q=search_query,
-                type="video",
-                order="relevance",
-            ).execute()
-
-            if 'items' in search_response and len(search_response['items']) > 0:
-                video_id = search_response['items'][0]['id']['videoId']
-                return jsonify({
-                    'playlist_url': None,
-                    'video_url': f'https://www.youtube.com/embed/{video_id}'
-                })
-            else:
-                return jsonify({'error': 'No video found'}), 404
-        except Exception as e:
-            return jsonify({'error': str(e)}), 500
         
 class YTDLP:
     GLOBAL_OPTS = {
@@ -194,4 +145,4 @@ class SCRAPE:
                 'thumbnail_url': None
             })
             
-YT: Optional[Type[Union[YTDLP, YTAPI, SCRAPE]]] = globals()[backend]
+YT: Optional[Type[Union[YTDLP, SCRAPE]]] = globals()[backend]

@@ -11,11 +11,6 @@ backend = Env.get_instance().ytbackend
 
 login_manager = LoginManager()
 cache_manager = CacheManager()
-if backend == 'YTAPI':
-    from MA_Scraper.app.API import YouTubeClient
-    youtube_client = YouTubeClient()
-else: 
-    youtube_client = False
 run_once_lock = threading.Lock()
 if backend == 'YTM':
     import MA_Scraper.YTMAPI.ytmusicapi as ytmusic
@@ -30,8 +25,6 @@ def create_app(test_config=None):
     app.config['SECRET_KEY'] = load_config('Secret_Key')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['YT_API_KEY'] = load_config('yt_api_key')
-    if youtube_client: 
-        youtube_client.init_app(app.config['YT_API_KEY'])
 
     login_manager.init_app(app)
     login_manager.login_view = 'auth.login'

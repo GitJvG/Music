@@ -119,7 +119,6 @@ class Env:
         self.client = httpx.Client(http2=True, headers=self.head, cookies=self.cook)
 
         self.ytbackend =    "SCRAPE"
-        # Backend for importing playlist data and embedding videos. Options: "YTDLP", "YTAPI" and "SCRAPE". 
-        # YTAPI: requires own API key, free key has limited free recourses per day
-        # YTDLP: No setup required and unlimited usage, same search results as YTAPI.
+        # Backend for importing playlist data and embedding videos. Options: "YTDLP" and "SCRAPE". 
+        # YTDLP: No setup required and unlimited usage
         # SCRAPE: Best search results as it includes playlists and embeds them as a video list that automatically plays all videos. 

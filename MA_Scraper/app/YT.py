@@ -1,5 +1,5 @@
 from bs4 import BeautifulSoup
-from MA_Scraper.app import youtube_client, backend, ytm
+from MA_Scraper.app import backend
 from flask import jsonify
 import re
 from typing import Optional, Type, Union
@@ -24,14 +24,6 @@ if backend == 'YTDLP' or backend == 'SCRAPE':
         from yt_dlp import YoutubeDL
     except ImportError as e:
         print(e)
-
-class YTM:
-    def get_user_playlists(count):
-        records = ytm.get_library_playlists(count)
-        return records
-    
-    def add_to_playlist(playlist_id, video_id):
-        ytm.add_playlist_items(playlist_id, video_id)
         
 class YTDLP:
     GLOBAL_OPTS = {

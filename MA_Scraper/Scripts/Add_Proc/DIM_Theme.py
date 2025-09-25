@@ -18,7 +18,7 @@ def save_Bandthemes(anchor_groups):
     theme_df = pd.read_csv(env.theme.path, dtype=env.theme.mapping, engine='pyarrow')
     # For each band, get the themes and their corresponding anchors
     df = pd.read_csv(env.deta.path, dtype=env.deta.mapping, engine='pyarrow')
-    df['themes'] = df['themes'].dropna().apply(basic_processing)
+    df['themes'] = basic_processing(df['themes'].dropna())
     df = df.dropna(subset='themes')
 
     anchor_name_to_id = theme_df.set_index('name')['theme_id'].to_dict()

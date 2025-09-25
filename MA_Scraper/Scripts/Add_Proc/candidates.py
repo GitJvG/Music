@@ -11,7 +11,6 @@ from sqlalchemy import func, select, case, cast, Date, text
 import hdbscan
 
 env = Env.get_instance()
-
 faiss.omp_set_num_threads(8)
 
 def split_one_hot_encode(df, multi_value_cols):
@@ -93,17 +92,19 @@ def create_user():
     return users_preference
 
 def create_item_embeddings(item):
+    ## ['theme_names', 'band_id', 'band_name', 'year_formed']
     multi_valued_categorical_cols = ['prefix_names']
     single_value_categorical_cols = ['country', 'status', 'b_label']
     numerical_columns = ['score', 'review_count', 'median_score']
+    cols = multi_valued_categorical_cols + single_value_categorical_cols + numerical_columns + ['band_id']
+    item = item[cols]
 
     processed_df = split_one_hot_encode(item, multi_valued_categorical_cols)
     final_categorical_df = pd.get_dummies(processed_df, columns=single_value_categorical_cols, dtype=int)
     numerical_embeddings = ((item[numerical_columns] - np.mean(item[numerical_columns], axis=0)) / np.std(item[numerical_columns], axis=0)).to_numpy()
 
-    categorical_columns = [col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed','genre_names']]
-    categorical_embeddings = final_categorical_df[categorical_columns].to_numpy()
-    clustering_columns = [col for col in processed_df.columns if col not in numerical_columns and col not in ['theme_names', 'band_id', 'band_name', 'year_formed','genre_names'] and col not in single_value_categorical_cols]
+    categorical_embeddings = final_categorical_df[[col for col in final_categorical_df.columns if col not in numerical_columns and col not in ['band_id']]].to_numpy()
+    clustering_columns = [col for col in processed_df.columns if col.startswith(tuple(multi_valued_categorical_cols))]
     clustering_embeddings = processed_df[clustering_columns].to_numpy()
 
     item_embeddings_dense = np.hstack([
@@ -282,7 +283,7 @@ def main(min_cluster_size=None, k=800):
     candidate_df = pd.DataFrame(candidate_list)
     candidate_df.to_csv(env.candidates.path, index=False)
 
-def complete_refresh(min_cluster_size=None, k=400):
+def complete_refresh(min_cluster_size=None, k=800):
     main(min_cluster_size, k)
     refresh_tables([Candidates])
 

@@ -49,7 +49,7 @@ def extract_url_id(url):
     return url.split('/')[-1]
 
 def list_to_delete(target_path):
-    all_band_ids = set(pd.read_csv(env.band.path, dtype=env.band.mapping)['band_id'])
+    all_band_ids = set(pd.read_csv(env.band.path, dtype=env.band.mapping, engine='pyarrow')['band_id'])
     existing_set = set(pd.read_csv(target_path.path, dtype=target_path.mapping)['band_id'])
 
     band_ids_to_delete = list(existing_set-all_band_ids)

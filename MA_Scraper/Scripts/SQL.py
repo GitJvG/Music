@@ -24,7 +24,6 @@ dataframes = {
 }
 
 def refresh_tables(model=None):
-    """Fully drops and truncates model before recreating it, this is done to overcome annoying relationship spaggetthi"""
     models = model if model else [Label, Band, Theme, Prefix, Genre, Discography, Similar_band, Member, BandGenres, BandPrefixes, Themes]
 
     for model in models:
@@ -36,8 +35,8 @@ def refresh_tables(model=None):
         Session.execute(text(f'DROP TABLE IF EXISTS "{model.__tablename__}" CASCADE;'))
     Session.commit()
 
-    Base.metadata.create_all(engine, checkfirst=False)
-    Label.__table__.drop()
+    Base.metadata.create_all(engine)
+
     for model in models:
         df = dataframes.get(model.__name__)()
         df.to_sql(model.__tablename__, con=engine, if_exists='append', index=False)

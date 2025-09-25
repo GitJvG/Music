@@ -1,6 +1,6 @@
 from sqlalchemy import func, select, case
 from MA_Scraper.app.db import Session
-from MA_Scraper.models import Band, Discography, Similar_band, Genre
+from MA_Scraper.models import Band, Discography, Similar_band, Genre, Prefix
 from datetime import datetime
 
 def Top_albums(band_ids, picks_per_band=1):
@@ -33,10 +33,10 @@ def Top_albums(band_ids, picks_per_band=1):
             ranked_albums_with_row_num.c.name,
             ranked_albums_with_row_num.c.type,
             ranked_albums_with_row_num.c.band_name,
-            func.string_agg(Genre.name, ', ').label('genre')
+            func.string_agg(Prefix.name, ', ').label('genre')
         )
         .join(Band, onclause=ranked_albums_with_row_num.c.band_id == Band.band_id)
-        .join(Band.genres)
+        .join(Band.prefixes)
         .where(ranked_albums_with_row_num.c.rank <= picks_per_band)
         .group_by(ranked_albums_with_row_num.c.band_id,
             ranked_albums_with_row_num.c.name,
@@ -85,11 +85,11 @@ def New_albums(query_limit=10, min_year=None):
             latest_albums_ranked.c.name,
             latest_albums_ranked.c.type,
             latest_albums_ranked.c.band_name,
-            func.string_agg(Genre.name, ', ').label('genre')
+            func.string_agg(Prefix.name, ', ').label('genre')
         )
         .join(agg_band_cte, agg_band_cte.c.band_id == latest_albums_ranked.c.band_id)
         .join(Band, onclause=latest_albums_ranked.c.band_id == Band.band_id)
-        .join(Band.genres)
+        .join(Band.prefixes)
         .where(latest_albums_ranked.c.rank_by_score == 1)
         .group_by(latest_albums_ranked.c.band_id,
             latest_albums_ranked.c.name,
@@ -110,12 +110,12 @@ def New_albums(query_limit=10, min_year=None):
              recent_albums_ranked_by_year.c.name,
              recent_albums_ranked_by_year.c.type,
              recent_albums_ranked_by_year.c.band_name,
-             func.string_agg(Genre.name, ', ').label('genre')
+             func.string_agg(Prefix.name, ', ').label('genre')
         )
         .join(band_scores, recent_albums_ranked_by_year.c.band_id == band_scores.c.band_id, isouter=True)
         .join(agg_band_cte, agg_band_cte.c.band_id == recent_albums_ranked_by_year.c.band_id)
         .join(Band, onclause=recent_albums_ranked_by_year.c.band_id == Band.band_id)
-        .join(Band.genres)
+        .join(Band.prefixes)
         .where(recent_albums_ranked_by_year.c.rank_by_year == 1, band_scores.c.total_score > 50, recent_albums_ranked_by_year.c.band_id.notin_(selected_band_ids)
                 ,agg_band_cte.c.total_reviews > 0)
         .group_by(recent_albums_ranked_by_year.c.band_id,

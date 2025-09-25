@@ -396,10 +396,10 @@ def update_album_status():
 @main.route('/algorithm', methods=['GET'])
 def clusters():
     base = (select(Candidates.cluster_id, Candidates.band_id, Candidates.score, Band.name, Genre.name.label('genre_name'), Genre.id.label('genre_id'), Prefix.name.label('prefix_name'), Prefix.id.label('prefix_id')).join(Candidates.band_obj).join(Band.genres).join(Band.prefixes, isouter=True).where(Candidates.user_id == current_user.id)).cte()
-    dc = select(base.c.cluster_id, base.c.band_id, base.c.name, base.c.score, base.c.genre_name).distinct().cte()
-    candidates = select(dc.c.cluster_id, dc.c.band_id, dc.c.name, dc.c.score, func.string_agg(dc.c.genre_name, ', ').label('genre_names')
+    dc = select(base.c.cluster_id, base.c.band_id, base.c.name, base.c.score, base.c.prefix_name).distinct().cte()
+    candidates = select(dc.c.cluster_id, dc.c.band_id, dc.c.name, dc.c.score, func.string_agg(dc.c.prefix_name, ', ').label('prefix_name')
                         ,func.row_number().over(partition_by=dc.c.cluster_id, order_by=dc.c.score.desc()).label('rn')).distinct().group_by(dc.c.cluster_id, dc.c.band_id, dc.c.name, dc.c.score).cte()
-    candidates = Session.execute(select(candidates.c.cluster_id, candidates.c.band_id, candidates.c.name, candidates.c.genre_names, candidates.c.score).where(candidates.c.rn < 6)).all()
+    candidates = Session.execute(select(candidates.c.cluster_id, candidates.c.band_id, candidates.c.name, candidates.c.prefix_name, candidates.c.score).where(candidates.c.rn < 6)).all()
 
     gbase = (select(base.c.cluster_id, base.c.band_id, base.c.genre_name, base.c.genre_id, base.c.score).distinct()).cte()
     cluster_header = (select(gbase.c.cluster_id, gbase.c.genre_name, func.row_number().over(partition_by=gbase.c.cluster_id, order_by=func.sum(gbase.c.score).desc()).label("rank")).group_by(gbase.c.cluster_id, gbase.c.genre_name)).cte()
@@ -408,7 +408,7 @@ def clusters():
     prefix_header = (select(base.c.cluster_id, base.c.prefix_name, func.row_number().over(partition_by=base.c.cluster_id, order_by=func.count(base.c.prefix_id).desc()).label("rank")).group_by(base.c.cluster_id, base.c.prefix_name)).cte()
     top_cluster_prefix_header = Session.execute(select(prefix_header.c.cluster_id, func.string_agg(prefix_header.c.prefix_name, ', ').label('prefix_names')).where(prefix_header.c.rank <= 3).group_by(prefix_header.c.cluster_id)).all()
     
-    candidate_list = [{"cluster": candidate.cluster_id, "band_id": candidate.band_id, "band_name": candidate.name, "genre_name": candidate.genre_names, "score": candidate.score} for candidate in candidates]
+    candidate_list = [{"cluster": candidate.cluster_id, "band_id": candidate.band_id, "band_name": candidate.name, "genre_name": candidate.prefix_name, "score": candidate.score} for candidate in candidates]
 
     top_cluster_header = {
     entry.cluster_id: {"cluster": entry.cluster_id, "genre_names": entry.genre_names, "prefix_names": None}
